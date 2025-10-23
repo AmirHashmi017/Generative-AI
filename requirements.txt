@@ -22,5 +22,5 @@ huggingface-hub
 python-dotenv
 
 # Machine Learning Utitlities
-numpy
+numpy==1.26.4
 scikit-learn
