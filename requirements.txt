@@ -24,7 +24,11 @@ python-dotenv
 
 # Machine Learning Utitlities
 numpy==1.26.4
+pandas
 scikit-learn
 
 # Deep Learning Utilities
 torch
+
+# UI Utilities
+streamlit
