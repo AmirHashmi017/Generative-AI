@@ -1,34 +1,28 @@
-# Langchain core
 langchain
 langchain-core
 
-# OpenAI Integration
 langchain-openai
 openai
 
-# Anthropic Integration
 langchain-anthropic
 
-# Google- Gemini Integration
 langchain-google-genai
 google-generativeai
 
-# Hugging Face Integration
 langchain-huggingface
 transformers
 sentence-transformers
 huggingface-hub
 
-# Environment Variables Management
 python-dotenv
+pydantic
+pydantic[email]
 
-# Machine Learning Utitlities
 numpy==1.26.4
 pandas
 scikit-learn
 
-# Deep Learning Utilities
 torch
 
-# UI Utilities
 streamlit
+
