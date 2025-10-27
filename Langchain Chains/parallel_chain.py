@@ -56,3 +56,5 @@ recognition, making it one of the most widely used algorithms in machine learnin
 
 result= final_chain.invoke(text)
 print(result)
+
+final_chain.get_graph().print_ascii()
