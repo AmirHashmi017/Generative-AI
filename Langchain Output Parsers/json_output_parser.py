@@ -18,6 +18,14 @@ input_variables=[],
 partial_variables= {'format_instruction':parser.get_format_instructions()}
 )
 
+# Without Chain
+# prompt= prompt_template.format()
+# result= model.invoke(prompt)
+# final_result= parser.parse(result.content)
+# print(final_result)
+
+# With Chain
+
 chain= prompt_template | model | parser
 
 result= chain.invoke({})
