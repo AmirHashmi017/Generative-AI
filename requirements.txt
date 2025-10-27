@@ -25,4 +25,5 @@ scikit-learn
 torch
 
 streamlit
+grandalf
 
