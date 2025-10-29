@@ -7,7 +7,7 @@ docs= loader.load()
 
 splitter= CharacterTextSplitter(
     chunk_size=100,
-    chunk_overlap=0, # It tells that how many charaters there should repeat or overlap in chunks
+    chunk_overlap=0, # It tells that how many charaters there should repeat or overlap in chunks, usually it is 10 to 20% of size
     separator=''
 )
 
