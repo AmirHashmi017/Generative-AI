@@ -1,6 +1,7 @@
 langchain
 langchain-core
 langchain-community
+langchain-experimental
 
 langchain-openai
 openai
