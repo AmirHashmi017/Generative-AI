@@ -28,4 +28,4 @@ torch
 streamlit
 grandalf
 pypdf
-
+bs4
