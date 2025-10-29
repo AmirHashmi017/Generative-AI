@@ -1,0 +1,17 @@
+Cricket
+
+Cricket is a bat-and-ball game played between two teams of eleven players each on a field at the center of which is a 22-yard pitch with a wicket at each end. It is one of the most popular sports in the world, particularly in countries such as India, England, Australia, Pakistan, South Africa, and the West Indies.
+
+The game is divided into innings where one team bats and attempts to score runs, while the other team bowls and fields to restrict runs and dismiss the batters. The roles are then switched after each innings.
+
+Formats of Cricket:
+1. Test Cricket – Played over five days with unlimited overs.
+2. One Day Internationals (ODIs) – Each team faces a maximum of 50 overs.
+3. Twenty20 (T20) – The shortest format, with 20 overs per side.
+
+Key Elements of the Game:
+- **Batting:** The batter’s objective is to score runs while protecting the wicket.
+- **Bowling:** The bowler delivers the ball to dismiss the batter or restrict runs.
+- **Fielding:** Fielders support the bowler by catching, stopping, or throwing the ball.
+
+Cricket requires a combination of strategy, skill, endurance, and teamwork. Iconic players like Sachin Tendulkar, Sir Don Bradman, Virat Kohli, and Ben Stokes have left a lasting legacy on the sport. International tournaments such as the ICC World Cup and T20 World Cup bring together nations in celebration of this beautiful game.
