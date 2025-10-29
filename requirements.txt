@@ -1,5 +1,6 @@
 langchain
 langchain-core
+langchain-community
 
 langchain-openai
 openai
@@ -26,4 +27,5 @@ torch
 
 streamlit
 grandalf
+pypdf
 
