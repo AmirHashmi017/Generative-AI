@@ -30,3 +30,6 @@ streamlit
 grandalf
 pypdf
 bs4
+
+chromadb
+tiktoken
