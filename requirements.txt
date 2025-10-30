@@ -33,3 +33,5 @@ bs4
 
 chromadb
 tiktoken
+faiss-cpu
+wikipedia
