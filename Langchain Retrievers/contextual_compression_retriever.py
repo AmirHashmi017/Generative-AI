@@ -27,13 +27,13 @@ base_retriever= vector_store.as_retriever(search_kwargs={"k":1})
 llm= ChatOpenAI(model='gpt-5')
 compressor= LLMChainExtractor.from_llm(llm)
 
-multiquery_retriever= ContextualCompressionRetriever(
+contextual_compression_retriever= ContextualCompressionRetriever(
     base_retriever=base_retriever,
     base_compressor= compressor
  )
 
 query= "Tell me about Photosynthesis?"
-results= multiquery_retriever.invoke(query)
+results= contextual_compression_retriever.invoke(query)
 print(results)
 for i,doc in enumerate(results):
     print(f"\n -- Result {i+1} --")
