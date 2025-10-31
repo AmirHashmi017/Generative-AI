@@ -1,6 +1,6 @@
 # YouTube Video Q&A Assistant 
 
-A GenAI-powered tool to ask questions about any YouTube video transcript. Built using **LangChain**, **Google Generative AI** and **Streamlit**, , this app converts video transcripts into searchable embeddings and answers your questions in natural language.
+A GenAI-powered tool to ask questions about any YouTube video. Built using **LangChain**, **Google Generative AI** and **Streamlit**, , this app converts video transcripts into searchable embeddings and answers your questions in natural language.
 
 ## 🔹 Features
 
