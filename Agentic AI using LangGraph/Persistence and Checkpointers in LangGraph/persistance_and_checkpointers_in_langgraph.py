@@ -58,3 +58,16 @@ print(f"Thread 2 Final State History: {final_state_history_2}")
 
 intermediate_state_history_2= list(workflow.get_state_history(config2))
 print(f"Thread 2 Intermediate State History: {intermediate_state_history_2}")
+
+# Time Travel
+workflow.get_state({
+    "configurable": {
+        "thread_id": "1",
+        "checkpoint_id": "1f0e496c-df48-691f-8000-f64674a776a"
+    }
+})
+# Resume from that checkpoint
+print(workflow.invoke(None,{"configurable":{"thread_id":"1","checkpoint_id":"1f0e496c-df48-691f-8000-f64674a776a"}}))
+
+# Update State Value in Time Travel
+workflow.update_state({"configurable":{"thread_id":"1","checkpoint_id":"1f0e496c-df48-691f-8000-f64674a776a","checkpoint_ns":""}},{"topic":"samosa"})
