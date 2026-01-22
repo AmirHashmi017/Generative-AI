@@ -1,5 +1,7 @@
 import streamlit as st
 from langgraph_backend import chatbot
+from langgraph_backend import retrieve_all_threads
+from langgraph_backend import save_chat_title, get_chat_title, get_all_chat_titles
 from langchain_core.messages import HumanMessage, AIMessage
 import uuid
 
@@ -12,10 +14,10 @@ def reset_chat():
     st.session_state['thread_id']=thread_id
     st.session_state['message_history']=[]
 
-def add_thread(thread_id,chat_title):
+def add_thread(thread_id, chat_title):
     if thread_id not in st.session_state['chat_threads']:
         st.session_state['chat_threads'].append(thread_id)
-        st.session_state['chat_titles'][thread_id]=chat_title
+        save_chat_title(thread_id, chat_title)
          
 
 def load_conversation(thread_id):
@@ -33,11 +35,8 @@ if 'message_history' not in st.session_state:
 if 'thread_id' not in st.session_state:
     st.session_state['thread_id']=generate_thread_id()
 
-if 'chat_titles' not in st.session_state:
-    st.session_state['chat_titles']={}
-
 if 'chat_threads' not in st.session_state:
-    st.session_state['chat_threads']=[]
+    st.session_state['chat_threads']=list(retrieve_all_threads())
 
     
 
@@ -59,8 +58,8 @@ if st.sidebar.button("New Chat"):
 st.sidebar.header("My Conversations")
 
 for thread_id in st.session_state['chat_threads']:
-    chat_title = st.session_state['chat_titles'][thread_id]
-    if st.sidebar.button(chat_title, key=str(thread_id)):
+    chat_title = get_chat_title(str(thread_id))
+    if chat_title and st.sidebar.button(chat_title, key=str(thread_id)):
         st.session_state['thread_id'] = thread_id
         messages = load_conversation(thread_id)
 

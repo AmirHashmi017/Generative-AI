@@ -42,3 +42,4 @@ pytube
 ddgs
 duckduckgo-search
 langgraph
+langgraph-checkpoint-sqlite
