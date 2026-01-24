@@ -7,6 +7,9 @@ from pydantic import BaseModel, Field
 from langsmith import traceable
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph, START, END
+import os
+
+os.environ['LANGCHAIN_PROJECT']="Essay Evaluation LangGraph Agent"
 
 load_dotenv()
 model = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
