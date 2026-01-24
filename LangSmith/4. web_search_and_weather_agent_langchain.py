@@ -5,14 +5,18 @@ from langchain_community.tools import DuckDuckGoSearchRun
 from langchain_classic.agents import create_react_agent, AgentExecutor
 from langchain_classic import hub
 from dotenv import load_dotenv
+import os
 
+os.environ['LANGCHAIN_PROJECT']="Web Search and Weather Agent"
 load_dotenv()
+WEATHERSTACK_API_KEY= os.getenv("WEATHERSTACK_API_KEY")
 
 search_tool = DuckDuckGoSearchRun()
 
 @tool
 def get_weather_data(city: str) -> str:
-  url = f'https://api.weatherstack.com/current?access_key=f07d9636974c4120025fadf60678771b&query={city}'
+  """"This tool takes location and gives it's temprature in output"""
+  url= f"https://api.weatherstack.com/current?access_key={WEATHERSTACK_API_KEY}&query={city}"
 
   response = requests.get(url)
 
