@@ -11,10 +11,11 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough, RunnableLambda
 from langchain_core.output_parsers import StrOutputParser
 
+os.environ['LANGCHAIN_PROJECT']="RAG Chatbot"
 
 load_dotenv()
 
-PDF_PATH = "islr.pdf" 
+PDF_PATH = "Amir Resume.pdf" 
 
 @traceable(name="load_pdf")
 def load_pdf(path: str):
@@ -30,7 +31,7 @@ def split_documents(docs, chunk_size=1000, chunk_overlap=150):
 
 @traceable(name="build_vectorstore")
 def build_vectorstore(splits):
-    emb = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+    emb = GoogleGenerativeAIEmbeddings(model="text-embedding-004")
     vs = FAISS.from_documents(splits, emb)
     return vs
 
@@ -41,7 +42,7 @@ def setup_pipeline(pdf_path: str):
     vs = build_vectorstore(splits)
     return vs
 
-llm = ChatGoogleGenerativeAI(model="gpt-4o-mini", temperature=0)
+llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
 
 prompt = ChatPromptTemplate.from_messages([
     ("system", "Answer ONLY from the provided context. If not found, say you don't know."),
