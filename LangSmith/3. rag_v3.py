@@ -11,11 +11,13 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough, RunnableLambda
 from langchain_core.output_parsers import StrOutputParser
 
+os.environ['LANGCHAIN_PROJECT']="RAG Chatbot"
+
 load_dotenv()
 
-PDF_PATH = "islr.pdf"  
+PDF_PATH = "Amir Resume.pdf"  
 
-@traceable(name="load_pdf")
+@traceable(name="load_pdf",tags=["load_pdf"],metadata={"loader":"PyPDFLoader"})
 def load_pdf(path: str):
     loader = PyPDFLoader(path)
     return loader.load()  
@@ -29,7 +31,7 @@ def split_documents(docs, chunk_size=1000, chunk_overlap=150):
 
 @traceable(name="build_vectorstore")
 def build_vectorstore(splits):
-    emb = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+    emb = GoogleGenerativeAIEmbeddings(model="text-embedding-004")
     return FAISS.from_documents(splits, emb)
 
 @traceable(name="setup_pipeline", tags=["setup"])
