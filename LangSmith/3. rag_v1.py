@@ -2,15 +2,17 @@ import os
 from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_classic.text_splitter import RecursiveCharacterTextSplitter
-from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
+from langchain_google_genai import GoogleGenerativeAIEmbeddings,ChatGoogleGenerativeAI
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough, RunnableLambda
 from langchain_core.output_parsers import StrOutputParser
 
+os.environ['LANGCHAIN_PROJECT']="RAG Chatbot"
+
 load_dotenv()  
 
-PDF_PATH = "islr.pdf"  
+PDF_PATH = "Amir Resume.pdf"  
 
 
 loader = PyPDFLoader(PDF_PATH)
@@ -19,7 +21,7 @@ docs = loader.load()
 splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
 splits = splitter.split_documents(docs)
 
-emb = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+emb = GoogleGenerativeAIEmbeddings(model="text-embedding-004")
 vs = FAISS.from_documents(splits, emb)
 retriever = vs.as_retriever(search_type="similarity", search_kwargs={"k": 4})
 
