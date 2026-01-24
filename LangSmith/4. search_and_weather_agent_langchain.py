@@ -18,7 +18,7 @@ def get_weather_data(city: str) -> str:
 
   return response.json()
 
-llm = ChatGoogleGenerativeAI()
+llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
 
 prompt = hub.pull("hwchase17/react")
 
