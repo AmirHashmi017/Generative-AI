@@ -1,11 +1,52 @@
 import streamlit as st
-from langgraph_backend import chatbot
+from langgraph_backend import chatbot, initialize_chatbot
 from langgraph_backend import retrieve_all_threads
-from langgraph_backend import save_chat_title, get_chat_title, get_all_chat_titles
+from langgraph_backend import save_chat_title, get_chat_title, get_messages_for_thread
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 import uuid
+import asyncio
+import sys
 
 st.set_page_config(page_title="LangGraph Chatbot", page_icon="🤖", layout="wide")
+
+@st.cache_resource
+def get_event_loop():
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            raise RuntimeError("Event loop is closed")
+    except RuntimeError:
+        if sys.platform == 'win32':
+            loop = asyncio.ProactorEventLoop()
+        else:
+            loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    return loop
+
+loop = get_event_loop()
+
+def run_async(coro):
+    """Run async code using the persistent event loop"""
+    return loop.run_until_complete(coro)
+
+async def init_app():
+    if st.session_state.get('chatbot_initialized', False) is False:
+        with st.spinner("🚀 Initializing chatbot with MCP tools..."):
+            await initialize_chatbot()
+            st.session_state['chatbot_initialized'] = True
+
+if 'chatbot_initialized' not in st.session_state:
+    run_async(init_app())
+
+async def collect_stream_events(user_input, config):
+    events = []
+    async for event in chatbot.astream(
+        {"messages": [HumanMessage(content=user_input)]},
+        config=config,
+        stream_mode="values",
+    ):
+        events.append(event)
+    return events
 
 def generate_thread_id():
     return str(uuid.uuid4())
@@ -18,7 +59,7 @@ def reset_chat():
 def add_thread(thread_id, chat_title):
     if thread_id not in st.session_state['chat_threads']:
         st.session_state['chat_threads'].append(thread_id)
-        save_chat_title(thread_id, chat_title)
+        run_async(save_chat_title(thread_id, chat_title))
 
 def load_conversation(thread_id):
     state = chatbot.get_state(
@@ -54,7 +95,16 @@ if 'thread_id' not in st.session_state:
     st.session_state['thread_id'] = generate_thread_id()
 
 if 'chat_threads' not in st.session_state:
-    st.session_state['chat_threads'] = list(retrieve_all_threads())
+    st.session_state['chat_threads'] = list(run_async(retrieve_all_threads()))
+
+st.title("💬 Chat Assistant")
+
+user_input = st.chat_input("Type your message here...")
+
+if user_input:
+    if st.session_state['thread_id'] not in st.session_state['chat_threads']:
+        chat_title = generate_chat_title(user_input)
+        add_thread(st.session_state['thread_id'], chat_title)
 
 st.sidebar.title("🤖 LangGraph Chatbot")
 
@@ -66,7 +116,7 @@ st.sidebar.divider()
 st.sidebar.header("💬 My Conversations")
 
 for thread_id in st.session_state['chat_threads']:
-    chat_title = get_chat_title(str(thread_id))
+    chat_title = run_async(get_chat_title(str(thread_id)))
     if chat_title:
         is_current = (str(thread_id) == str(st.session_state['thread_id']))
         button_type = "primary" if is_current else "secondary"
@@ -78,40 +128,45 @@ for thread_id in st.session_state['chat_threads']:
             type=button_type
         ):
             st.session_state['thread_id'] = thread_id
-            messages = load_conversation(thread_id)
+            try:
+                with st.spinner("📂 Loading conversation..."):
+                    messages = run_async(get_messages_for_thread(thread_id))
 
-            temp_messages = []
-            for message in messages:
-                if isinstance(message, HumanMessage):
-                    temp_messages.append({
-                        'role': 'user', 
-                        'content': message.content,
-                        'type': 'message'
-                    })
-                elif isinstance(message, AIMessage):
-                    if hasattr(message, 'tool_calls') and message.tool_calls:
-                        for tool_call in message.tool_calls:
+                    temp_messages = []
+                    for message in messages:
+                        if isinstance(message, HumanMessage):
                             temp_messages.append({
-                                'role': 'tool_call',
-                                'tool_name': tool_call.get('name', 'unknown'),
-                                'args': tool_call.get('args', {}),
-                                'type': 'tool_call'
+                                'role': 'user', 
+                                'content': message.content,
+                                'type': 'message'
                             })
-                    
-                    if message.content:
-                        temp_messages.append({
-                            'role': 'assistant', 
-                            'content': message.content,
-                            'type': 'message'
-                        })
-                elif isinstance(message, ToolMessage):
-                    pass
+                        elif isinstance(message, AIMessage):
+                            if hasattr(message, 'tool_calls') and message.tool_calls:
+                                for tool_call in message.tool_calls:
+                                    temp_messages.append({
+                                        'role': 'tool_call',
+                                        'tool_name': tool_call.get('name', 'unknown'),
+                                        'args': tool_call.get('args', {}),
+                                        'type': 'tool_call'
+                                    })
+                            
+                            if message.content:
+                                temp_messages.append({
+                                    'role': 'assistant', 
+                                    'content': message.content,
+                                    'type': 'message'
+                                })
+                        elif isinstance(message, ToolMessage):
+                            pass
 
-            st.session_state['message_history'] = temp_messages
+                    st.session_state['message_history'] = temp_messages
+            except Exception as e:
+                st.error(f"❌ Error loading conversation: {str(e)}")
+                
             st.rerun()
 
 
-st.title("💬 Chat Assistant")
+
 
 for message in st.session_state['message_history']:
     if message.get('type') == 'tool_call':
@@ -127,13 +182,8 @@ config = {
     "run_name": "chat_turn"
 }
 
-user_input = st.chat_input("Type your message here...")
 
 if user_input:
-    if st.session_state['thread_id'] not in st.session_state['chat_threads']:
-        chat_title = generate_chat_title(user_input)
-        add_thread(st.session_state['thread_id'], chat_title)
-
     st.session_state['message_history'].append({
         'role': 'user', 
         'content': user_input,
@@ -150,11 +200,10 @@ if user_input:
         current_tool_calls = []
         active_statuses = {}
         
-        for event in chatbot.stream(
-            {"messages": [HumanMessage(content=user_input)]},
-            config=config,
-            stream_mode="values",
-        ):
+        with st.spinner("🤖 Thinking..."):
+            events = run_async(collect_stream_events(user_input, config))
+        
+        for event in events:
             if "messages" in event:
                 last_message = event["messages"][-1]
 
@@ -188,12 +237,20 @@ if user_input:
                         new_content = last_message.content
 
                         if isinstance(new_content, list):
-                            new_content = str(new_content)
+                            
+                            if new_content and isinstance(new_content[0], dict):
+                                new_content = new_content[0].get('text', str(new_content))
+                            else:
+                                new_content = str(new_content)
                         elif not isinstance(new_content, str):
                             new_content = str(new_content)
                         
-                        if new_content != full_response:
-                            full_response = new_content
+                        
+                        lines = new_content.split('\n')
+                        clean_content = lines[0].strip() if lines else new_content
+                        
+                        if clean_content and clean_content != full_response:
+                            full_response = clean_content
                             response_placeholder.markdown(full_response + " ▌")
 
                 elif isinstance(last_message, ToolMessage):
