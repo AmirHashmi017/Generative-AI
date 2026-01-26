@@ -1,7 +1,8 @@
 import streamlit as st
 from langgraph_backend import chatbot, initialize_chatbot
-from langgraph_backend import retrieve_all_threads
+from langgraph_backend import retrieve_all_threads, ingest_pdf
 from langgraph_backend import save_chat_title, get_chat_title, get_messages_for_thread
+from langgraph_backend import set_thread_context
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 import uuid
 import asyncio
@@ -39,6 +40,11 @@ if 'chatbot_initialized' not in st.session_state:
     run_async(init_app())
 
 async def collect_stream_events(user_input, config):
+    """Collect stream events - sets thread context before streaming"""
+    # Extract thread_id and set it in context for rag_tool
+    thread_id = config.get('configurable', {}).get('thread_id')
+    set_thread_context(thread_id)
+    
     events = []
     async for event in chatbot.astream(
         {"messages": [HumanMessage(content=user_input)]},
@@ -97,6 +103,12 @@ if 'thread_id' not in st.session_state:
 if 'chat_threads' not in st.session_state:
     st.session_state['chat_threads'] = list(run_async(retrieve_all_threads()))
 
+if "ingested_docs" not in st.session_state:
+    st.session_state["ingested_docs"] = {}
+
+thread_key = str(st.session_state["thread_id"])
+thread_docs = st.session_state["ingested_docs"].setdefault(thread_key, {})
+
 st.title("💬 Chat Assistant")
 
 user_input = st.chat_input("Type your message here...")
@@ -111,6 +123,29 @@ st.sidebar.title("🤖 LangGraph Chatbot")
 if st.sidebar.button("➕ New Chat", use_container_width=True):
     reset_chat()
     st.rerun()
+
+if thread_docs:
+    latest_doc = list(thread_docs.values())[-1]
+    st.sidebar.success(
+        f"Using `{latest_doc.get('filename')}` "
+        f"({latest_doc.get('chunks')} chunks from {latest_doc.get('documents')} pages)"
+    )
+else:
+    st.sidebar.info("No PDF indexed yet.")
+
+uploaded_pdf = st.sidebar.file_uploader("Upload a PDF for this chat", type=["pdf"])
+if uploaded_pdf:
+    if uploaded_pdf.name in thread_docs:
+        st.sidebar.info(f"`{uploaded_pdf.name}` already processed for this chat.")
+    else:
+        with st.sidebar.status("Indexing PDF…", expanded=True) as status_box:
+            summary = ingest_pdf(
+                uploaded_pdf.getvalue(),
+                thread_id=thread_key,
+                filename=uploaded_pdf.name,
+            )
+            thread_docs[uploaded_pdf.name] = summary
+            status_box.update(label="✅ PDF indexed", state="complete", expanded=False)
 
 st.sidebar.divider()
 st.sidebar.header("💬 My Conversations")

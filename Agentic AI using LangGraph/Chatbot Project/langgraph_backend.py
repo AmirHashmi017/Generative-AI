@@ -1,17 +1,22 @@
 from langgraph.graph import StateGraph, START, END
-from typing import List,TypedDict,Annotated
+from typing import List,TypedDict,Annotated,Optional,Dict, Any
 from langchain_core.messages import BaseMessage
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode,tools_condition
 from langchain_community.tools import DuckDuckGoSearchRun
 from langchain_core.tools import tool,InjectedToolArg
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langchain_mcp_adapters.client import MultiServerMCPClient
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_classic.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import FAISS
 from dotenv import load_dotenv
 import aiosqlite
 import requests
+import tempfile
 import os
+import contextvars
 
 os.environ['LANGCHAIN_PROJECT']='Chatbot-Project'
 
@@ -20,6 +25,66 @@ WEATHERSTACK_API_KEY= os.getenv("WEATHERSTACK_API_KEY")
 EXCHANGERATE_API_KEY= os.getenv("EXCHANGERATE_API_KEY")
 
 llm= ChatGoogleGenerativeAI(model="gemini-2.5-flash")
+embedding= GoogleGenerativeAIEmbeddings(model="text-embedding-004")
+
+_THREAD_RETRIEVERS: Dict[str, Any] = {}
+_THREAD_METADATA: Dict[str, dict] = {}
+
+_current_thread_id = contextvars.ContextVar('thread_id', default=None)
+
+def set_thread_context(thread_id: str):
+    return _current_thread_id.set(thread_id)
+
+def get_thread_context() -> Optional[str]:
+    return _current_thread_id.get()
+
+
+def _get_retriever(thread_id: Optional[str]):
+    if thread_id and thread_id in _THREAD_RETRIEVERS:
+        return _THREAD_RETRIEVERS[thread_id]
+    return None
+
+
+def ingest_pdf(file_bytes: bytes, thread_id: str, filename: Optional[str] = None) -> dict:
+    if not file_bytes:
+        raise ValueError("No bytes received for ingestion.")
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+        temp_file.write(file_bytes)
+        temp_path = temp_file.name
+
+    try:
+        loader = PyPDFLoader(temp_path)
+        docs = loader.load()
+
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000, chunk_overlap=200, separators=["\n\n", "\n", " ", ""]
+        )
+        chunks = splitter.split_documents(docs)
+
+        vector_store = FAISS.from_documents(chunks, embedding)
+        retriever = vector_store.as_retriever(
+            search_type="similarity", search_kwargs={"k": 4}
+        )
+
+        _THREAD_RETRIEVERS[str(thread_id)] = retriever
+        _THREAD_METADATA[str(thread_id)] = {
+            "filename": filename or os.path.basename(temp_path),
+            "documents": len(docs),
+            "chunks": len(chunks),
+        }
+
+        return {
+            "filename": filename or os.path.basename(temp_path),
+            "documents": len(docs),
+            "chunks": len(chunks),
+        }
+    finally:
+        try:
+            os.remove(temp_path)
+        except OSError:
+            pass
+
 
 client= MultiServerMCPClient(
     {
@@ -38,6 +103,31 @@ client= MultiServerMCPClient(
 
 search_tool= DuckDuckGoSearchRun(region="us-en")
 
+
+
+@tool
+def rag_tool(query: str) -> dict:
+    """
+    Retrieves relevant information from document.
+    Use this tool when the user asks factual/conceptual questions 
+    that might be answered from stored documents.
+    """
+    thread_id = get_thread_context()
+    retriever = _get_retriever(thread_id)
+    if retriever is None:
+        return {
+            "error": "No document indexed for this chat. Upload a PDF first.",
+            "query": query,
+        }
+    result = retriever.invoke(query)
+    context = [doc.page_content for doc in result]
+    metadata = [doc.metadata for doc in result]
+    return{
+        'query': query,
+        'context': context,
+        'metadata': metadata,
+        "source_file": _THREAD_METADATA.get(str(thread_id), {}).get("filename"),
+    }
 
 @tool
 def get_weather_data(city: str) -> str:
@@ -89,7 +179,7 @@ async def setup_checkpointer():
     checkpointer = AsyncSqliteSaver(conn)
 
 async def build_graph():
-    base_tools= [search_tool, get_weather_data, get_conversion_factor, convert_currency]
+    base_tools= [search_tool, rag_tool, get_weather_data, get_conversion_factor, convert_currency]
     mcp_tools= await client.get_tools()
     tools= base_tools+mcp_tools
     llm_with_tools= llm.bind_tools(tools)
