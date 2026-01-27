@@ -1,16 +1,19 @@
 from langgraph.graph import StateGraph, START, END
-from typing import List,TypedDict,Annotated,Optional,Dict, Any
-from langchain_core.messages import BaseMessage
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode,tools_condition
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+from langgraph.types import interrupt, Command
+
+from langchain_core.messages import BaseMessage
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_community.tools import DuckDuckGoSearchRun
 from langchain_core.tools import tool,InjectedToolArg
-from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_classic.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
+
+from typing import List,TypedDict,Annotated,Optional,Dict, Any
 from dotenv import load_dotenv
 import aiosqlite
 import requests
@@ -133,9 +136,7 @@ def rag_tool(query: str) -> dict:
 def get_weather_data(city: str) -> str:
   """"This tool takes location and gives it's temprature in output"""
   url= f"https://api.weatherstack.com/current?access_key={WEATHERSTACK_API_KEY}&query={city}"
-
   response = requests.get(url)
-
   return response.json()
 
 @tool
@@ -144,6 +145,9 @@ def get_conversion_factor(base_currency:str,target_currency:str)->float:
     This function fecthes the currency conversion factor between the given 
     base currency and target currency.
     """
+    decision= interrupt(f"HITL: Allow Currency Tool to fetch conversion rate from {base_currency} to {target_currency}? (Yes/No)")
+    if decision and decision.get("approved") == "no":
+        return {"response": "Tool Call Denied by User"}
     url=f"https://v6.exchangerate-api.com/v6/{EXCHANGERATE_API_KEY}/pair/{base_currency}/{target_currency}"
     response= requests.get(url)
     return response.json()

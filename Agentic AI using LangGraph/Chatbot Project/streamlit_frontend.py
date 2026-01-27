@@ -4,6 +4,8 @@ from langgraph_backend import retrieve_all_threads, ingest_pdf
 from langgraph_backend import save_chat_title, get_chat_title, get_messages_for_thread
 from langgraph_backend import set_thread_context
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
+from langgraph.types import Command
+from langgraph.errors import GraphInterrupt
 import uuid
 import asyncio
 import sys
@@ -40,20 +42,54 @@ if 'chatbot_initialized' not in st.session_state:
     run_async(init_app())
 
 async def collect_stream_events(user_input, config):
-    """Collect stream events - sets thread context before streaming"""
-    # Extract thread_id and set it in context for rag_tool
     thread_id = config.get('configurable', {}).get('thread_id')
     set_thread_context(thread_id)
     
     events = []
-    async for event in chatbot.astream(
-        {"messages": [HumanMessage(content=user_input)]},
-        config=config,
-        stream_mode="values",
-    ):
-        events.append(event)
-    return events
+    interrupt_value = None
+    
+    try:
+        async for event in chatbot.astream(
+            {"messages": [HumanMessage(content=user_input)]},
+            config=config,
+            stream_mode="values",
+        ):
+            events.append(event)
+    except GraphInterrupt as e:
+        interrupt_value = e.value
+        return events, interrupt_value
+    
+    state = await chatbot.aget_state(config)
+    interrupt_value = None
+    if state.tasks:
+        for task in state.tasks:
+            if task.interrupts:
+                interrupt_value = task.interrupts[0].value
+                break
+    
+    return events, interrupt_value
 
+async def resume_after_interrupt(decision, config):
+    thread_id = config.get('configurable', {}).get('thread_id')
+    set_thread_context(thread_id)
+    
+    events = []
+    interrupt_value = None
+
+    
+    try:
+        async for event in chatbot.astream(
+            Command(resume=decision),
+            config=config,
+            stream_mode="values",
+        ):
+            events.append(event)
+    except GraphInterrupt as e:
+        interrupt_value = e.value
+        return events, interrupt_value
+
+    return events, interrupt_value
+  
 def generate_thread_id():
     return str(uuid.uuid4())
 
@@ -105,6 +141,9 @@ if 'chat_threads' not in st.session_state:
 
 if "ingested_docs" not in st.session_state:
     st.session_state["ingested_docs"] = {}
+
+if 'interrupt_data' not in st.session_state:
+    st.session_state['interrupt_data'] = None
 
 thread_key = str(st.session_state["thread_id"])
 thread_docs = st.session_state["ingested_docs"].setdefault(thread_key, {})
@@ -236,8 +275,81 @@ if user_input:
         active_statuses = {}
         
         with st.spinner("🤖 Thinking..."):
-            events = run_async(collect_stream_events(user_input, config))
-        
+            events, interrupt_value = run_async(collect_stream_events(user_input, config))
+            
+            if interrupt_value:
+                st.session_state['interrupt_data'] = interrupt_value
+            else:
+                st.session_state['interrupt_data'] = None
+
+if st.session_state.get('interrupt_data'):
+    interrupt_msg = st.session_state['interrupt_data']
+    interrupt_msg = interrupt_msg if isinstance(interrupt_msg, str) else str(interrupt_msg)
+
+    with st.chat_message("assistant"):
+        st.warning(f"⏸️ **Human Review Required**")
+        st.write(f"**Request:** {interrupt_msg}")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            if st.button("✅ Yes - Allow", use_container_width=True, key="hitl_yes"):
+                with st.spinner("Resuming with approval..."):
+                    resume_events, new_interrupt = run_async(
+                        resume_after_interrupt({"approved": "yes"}, config)
+                    )
+
+                    for event in resume_events:
+                        if "messages" in event:
+                            messages_list = event["messages"]
+
+                            for message in messages_list:
+                                if isinstance(message, AIMessage):
+                                    if message.content:
+                                        content = message.content
+                                        if isinstance(content, list):
+                                            content = content[0].get('text', str(content)) if content else ""
+
+                                        # # Add to history and display
+                                        # st.session_state['message_history'].append({
+                                        #     'role': 'assistant', 
+                                        #     'content': content,
+                                        #     'type': 'message'
+                                        # })
+
+                    st.session_state['interrupt_data'] = new_interrupt
+                    st.rerun()
+
+        with col2:
+            if st.button("❌ No - Deny", use_container_width=True, key="hitl_no"):
+                with st.spinner("Resuming with denial..."):
+                    resume_events, new_interrupt = run_async(
+                        resume_after_interrupt({"approved": "no"}, config)
+                    )
+
+                    for event in resume_events:
+                        if "messages" in event:
+                            messages_list = event["messages"]
+
+                            for message in messages_list:
+                                if isinstance(message, AIMessage):
+                                    if message.content:
+                                        content = message.content
+                                        if isinstance(content, list):
+                                            content = content[0].get('text', str(content)) if content else ""
+
+                                        st.session_state['message_history'].append({
+                                            'role': 'assistant', 
+                                            'content': content,
+                                            'type': 'message'
+                                        })
+
+                    st.session_state['interrupt_data'] = new_interrupt
+                    st.rerun()
+    st.stop()
+
+if user_input:
+
         for event in events:
             if "messages" in event:
                 last_message = event["messages"][-1]
