@@ -310,7 +310,6 @@ if st.session_state.get('interrupt_data'):
                                         if isinstance(content, list):
                                             content = content[0].get('text', str(content)) if content else ""
 
-                                        # Add to history and display
                                         st.session_state['message_history'].append({
                                             'role': 'assistant', 
                                             'content': content,
