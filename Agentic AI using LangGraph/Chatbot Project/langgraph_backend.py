@@ -28,7 +28,7 @@ WEATHERSTACK_API_KEY= os.getenv("WEATHERSTACK_API_KEY")
 EXCHANGERATE_API_KEY= os.getenv("EXCHANGERATE_API_KEY")
 
 llm= ChatGoogleGenerativeAI(model="gemini-2.5-flash")
-embedding= GoogleGenerativeAIEmbeddings(model="text-embedding-004")
+embedding= GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
 
 _THREAD_RETRIEVERS: Dict[str, Any] = {}
 _THREAD_METADATA: Dict[str, dict] = {}
