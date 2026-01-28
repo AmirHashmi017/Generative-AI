@@ -48,3 +48,6 @@ langsmith==0.4.13
 
 fastmcp
 langchain_mcp_adapters
+
+langgraph-checkpoint-postgres
+psycopg[binary,pool]
