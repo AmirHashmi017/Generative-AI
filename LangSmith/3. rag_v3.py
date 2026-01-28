@@ -31,7 +31,7 @@ def split_documents(docs, chunk_size=1000, chunk_overlap=150):
 
 @traceable(name="build_vectorstore")
 def build_vectorstore(splits):
-    emb = GoogleGenerativeAIEmbeddings(model="text-embedding-004")
+    emb = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
     return FAISS.from_documents(splits, emb)
 
 @traceable(name="setup_pipeline", tags=["setup"])

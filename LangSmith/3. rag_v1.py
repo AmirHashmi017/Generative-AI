@@ -21,7 +21,7 @@ docs = loader.load()
 splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
 splits = splitter.split_documents(docs)
 
-emb = GoogleGenerativeAIEmbeddings(model="text-embedding-004")
+emb = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
 vs = FAISS.from_documents(splits, emb)
 retriever = vs.as_retriever(search_type="similarity", search_kwargs={"k": 4})
 

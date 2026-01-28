@@ -82,7 +82,7 @@ def load_or_build_index(
     pdf_path: str,
     chunk_size: int = 1000,
     chunk_overlap: int = 150,
-    embed_model_name: str = "text-embedding-004",
+    embed_model_name: str = "models/gemini-embedding-001",
     force_rebuild: bool = False,
 ):
     key = _index_key(pdf_path, chunk_size, chunk_overlap, embed_model_name)
@@ -120,7 +120,7 @@ def setup_pipeline_and_query(
     question: str,
     chunk_size: int = 1000,
     chunk_overlap: int = 150,
-    embed_model_name: str = "text-embedding-004",
+    embed_model_name: str = "models/gemini-embedding-001",
     force_rebuild: bool = False,
 ):
     vectorstore = setup_pipeline(pdf_path, chunk_size, chunk_overlap, embed_model_name, force_rebuild)
