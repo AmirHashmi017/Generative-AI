@@ -77,7 +77,7 @@ def process_video(video_url):
         )
         chunks = splitter.create_documents([transcript])
 
-        embedding = GoogleGenerativeAIEmbeddings(model="text-embedding-004")
+        embedding = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
         vector_store = FAISS.from_documents(
             documents=chunks,
             embedding=embedding
