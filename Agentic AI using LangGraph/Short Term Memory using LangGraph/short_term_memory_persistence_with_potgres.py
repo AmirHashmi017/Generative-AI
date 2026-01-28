@@ -27,7 +27,7 @@ graph.add_node("chat_node",chat_node)
 graph.add_edge(START,"chat_node")
 graph.add_edge("chat_node",END)
 
-DB_URI= "postgresql://postgres:postres@localhost:5442/postgres" 
+DB_URI= "postgresql://postgres:postgres@localhost:5442/postgres" 
 
 with PostgresSaver.from_conn_string(DB_URI) as checkpointer:
     checkpointer.setup()
