@@ -7,6 +7,7 @@ from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.store.memory import InMemoryStore
 from langgraph.store.base import BaseStore
+from langgraph.store.postgres import PostgresStore
 from langchain_core.runnables import RunnableConfig
 from dotenv import load_dotenv
 import uuid
@@ -28,7 +29,6 @@ class remember_ltm(BaseModel):
 
 remember_llm= llm.with_structured_output(remember_ltm)
 
-store= InMemoryStore()
 user_id="u1"
 user_details= ("user",user_id,"details")
 
@@ -151,22 +151,27 @@ graph.add_node("remember_ltm_node",remember_ltm_node)
 graph.add_edge(START,"remember_ltm_node")
 graph.add_edge("remember_ltm_node","chat_node")
 graph.add_edge("chat_node",END)
-chatbot= graph.compile(checkpointer=checkpointer,store=store)
 
-config={"configurable":{"thread_id":"123","user_id":"u1"}}
-    
-response= chatbot.invoke({"messages":[HumanMessage(content="Hi My name is Amir")]}, config=config)
-response= chatbot.invoke({"messages":[HumanMessage(content="I am AI/ML Developer ")]},config=config)
-response= chatbot.invoke({"messages":[HumanMessage(content="I Prefer concise answers")]}, config=config)
-response= chatbot.invoke({"messages":[HumanMessage(content="I Like examples in python")]},config=config)
-response= chatbot.invoke({"messages":[HumanMessage(content="I am Building MCP Servers Python Based Project")]},config=config)
-response= chatbot.invoke({"messages":[HumanMessage(content="I am AI/ML Developer")]},config=config)
+DB_URI= "postgresql://postgres:postgres@localhost:5442/postgres" 
 
-response= chatbot.invoke({"messages":[HumanMessage(content="Explain me LangChain")]},
-                         config=config)
-print(response["messages"][-1].content) 
+with PostgresStore.from_conn_string(DB_URI) as store:
+    store.setup()
+    chatbot= graph.compile(checkpointer=checkpointer,store=store)
 
-items= store.search(user_details)
-for item in items:
-    print(item.value.get("data"))
+    config={"configurable":{"thread_id":"123","user_id":"u1"}}
+
+    response= chatbot.invoke({"messages":[HumanMessage(content="Hi My name is Amir")]}, config=config)
+    response= chatbot.invoke({"messages":[HumanMessage(content="I am AI/ML Developer ")]},config=config)
+    response= chatbot.invoke({"messages":[HumanMessage(content="I Prefer concise answers")]}, config=config)
+    response= chatbot.invoke({"messages":[HumanMessage(content="I Like examples in python")]},config=config)
+    response= chatbot.invoke({"messages":[HumanMessage(content="I am Building MCP Servers Python Based Project")]},config=config)
+    response= chatbot.invoke({"messages":[HumanMessage(content="I am AI/ML Developer")]},config=config)
+
+    response= chatbot.invoke({"messages":[HumanMessage(content="Explain me LangChain")]},
+                             config=config)
+    print(response["messages"][-1].content) 
+
+    items= store.search(user_details)
+    for item in items:
+        print(item.value.get("data"))
 
