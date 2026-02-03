@@ -226,6 +226,39 @@ Features:
 
 ---
 
+### 🛠️ AI Automations with n8n
+
+Alongside my deep dive into Generative AI and Agentic AI, I’ve explored practical AI automations using n8n. These workflows demonstrate how AI can be applied to real-world tasks, combining tools, data pipelines, and AI models:
+
+► 🎤 Voice-Interactive AI Knowledge Agent
+A voice-based AI that retrieves answers from a Pinecone vector store and responds using Eleven Labs TTS. Perfect for hands-free knowledge retrieval.
+
+► 📄 Document Vectorization & Retrieval Engine
+Fetch documents from Google Drive, generate embeddings, and store them in Pinecone for semantic search. Enables fast and intelligent document querying.
+
+► 🤖 Multi-Tool AI Agent
+Handles chat messages and uses multiple tools: Tavily search, Wikipedia, weather updates, RSS feeds to provide contextual answers.
+
+► 💬 Project-Integrated Slack AI Bot
+Replies to messages using Gemini AI and integrates with 3 Google Sheets to provide project-specific insights directly in Slack.
+
+► 📱 Smart Telegram Support Bot
+Categorizes customer queries, generates AI responses, and logs interactions in Google Sheets for analytics.
+
+► 📝 OCR-Powered Email Automation
+Upload images (e.g., invoices), extract text using Mistral OCR, and send curated emails automatically.
+
+► 🏥 Automated Healthcare Data Scraper
+Scrapes Google Maps for doctors in the USA, extracts emails from their websites, and stores them in Google Sheets.
+
+► 🗂️ Automated Form-to-Sheet Pipeline
+Form submissions are instantly saved in Google Sheets, with curated confirmation emails sent automatically.
+
+► 🎉 Automated Birthday Emailer
+Runs every day at midnight, retrieves customer birthdates from Airtable, and sends personalized birthday emails automatically.
+
+---
+
 ## 🧠 Key Takeaways
 
 - Designed **autonomous agentic systems**
