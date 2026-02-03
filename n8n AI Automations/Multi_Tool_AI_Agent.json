@@ -1,0 +1,238 @@
+{
+  "name": "Multi-Tool AI Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "10220cca-7e72-42a9-885e-68155ac61b07",
+      "name": "When chat message received",
+      "webhookId": "041c5926-7da7-4bb3-a4f2-1c97c255e397"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a helpful assistant. You have access to 2 tools Weather Tool, News Feed and web search tool. You have to call them when user ask about weather or latest news or ask to do web search or you feel that web search is needed means for latest stats etc and return a user friendly and readable response if user ask something other then just answer the things from your llm no need to call tool. You also have to use Wikepedia Tool when Required the wikepedia tool is attached"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        180,
+        0
+      ],
+      "id": "a836e69a-4a3c-489a-95e8-48cfb5897e2a",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        0,
+        240
+      ],
+      "id": "597c3784-2b49-441f-b31e-812e9e463579",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "e1PUcu51s5skMht4",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        140,
+        240
+      ],
+      "id": "3fe248cf-1f41-41b2-ae07-418daee4c171",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "url": "https://api.weatherstack.com/current",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "access_key",
+              "value": "581546df772c4c19a00c4fd6eb3ba314"
+            },
+            {
+              "name": "query",
+              "value": "Lahore"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        240
+      ],
+      "id": "8c9f0470-6cd7-4e51-a3fb-ce32019a3f9b",
+      "name": "Weather Tool"
+    },
+    {
+      "parameters": {
+        "url": "http://feeds.bbci.co.uk/news/world/rss.xml",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedReadTool",
+      "typeVersion": 1.1,
+      "position": [
+        600,
+        240
+      ],
+      "id": "a0a243c8-2049-4b14-8360-ea4043ef98b3",
+      "name": "NEWS Feed"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use this tool to Search the Web",
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"{{ $json.chatInput }}\",\n  \"topic\": \"general\",\n  \"search_depth\": \"advanced\",\n  \"max_results\": 1,\n  \"include_answer\": true\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        240
+      ],
+      "id": "d2cb7748-81b1-4ef7-a047-6c4fd88da649",
+      "name": "Tavily Web Search",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1afcyQ7MwVIB9vxQ",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "typeVersion": 1,
+      "position": [
+        720,
+        240
+      ],
+      "id": "63d55063-701e-4086-8171-c3a288597ef7",
+      "name": "Wikipedia"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weather Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NEWS Feed": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily Web Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wikipedia": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "513ef7a1-2d4e-462c-9b75-fb4c14bff0e1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a14066fbe145cd8c99dbf4f5b2fd91cc22b89178d6d50adad487d793c6b5e040"
+  },
+  "id": "w4V5R62MgzCIL55G",
+  "tags": []
+}

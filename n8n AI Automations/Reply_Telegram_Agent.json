@@ -1,0 +1,161 @@
+{
+  "name": "Reply Telegram Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e38ac318-cd0d-4ea2-9c09-06b4ab41f32f",
+      "name": "Telegram Trigger",
+      "webhookId": "239fdd0b-6d83-48ff-ae0b-a3a8fe86ec75",
+      "credentials": {
+        "telegramApi": {
+          "id": "R9mGZmc8vZRPEvhi",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        180,
+        160
+      ],
+      "id": "54be6ba2-84b6-443d-8625-eb44d04b55b1",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "e1PUcu51s5skMht4",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        640,
+        20
+      ],
+      "id": "688490c1-a211-45d1-a3a2-7e20afdffea3",
+      "name": "Send a text message",
+      "webhookId": "107cd36c-8e71-4445-9fb8-21e20a2e5e74",
+      "credentials": {
+        "telegramApi": {
+          "id": "R9mGZmc8vZRPEvhi",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let text = $input.first().json.output\n\ntext = text\n  .replace(/\\*\\*(.*?)\\*\\*/g, \"$1\")  \n  .replace(/###\\s?/g, \"\")             \n  .replace(/##\\s?/g, \"\")\n  .replace(/#\\s?/g, \"\")\n  .replace(/`/g, \"\")\n  .replace(/_/g, \"\");\n\nif (text.length > 4000) {\n  text = text.slice(0, 4000) + \"\\n\\n…(trimmed)\";\n}\n\nreturn [{ json: { message: text } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        20
+      ],
+      "id": "2a6b58da-61e3-4174-befb-c9e2e6936f44",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "You are a helpful assistant. Respond in plain text only.\nDo not use markdown, headings, bullet symbols, or formatting."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        180,
+        0
+      ],
+      "id": "4b7fc4b4-0489-4f4a-83bc-38447d4d8228",
+      "name": "AI Agent1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d3c4db5e-f8b9-4289-848c-54f5f66d903c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a14066fbe145cd8c99dbf4f5b2fd91cc22b89178d6d50adad487d793c6b5e040"
+  },
+  "id": "36TfcLDgBjRQDo6L",
+  "tags": []
+}

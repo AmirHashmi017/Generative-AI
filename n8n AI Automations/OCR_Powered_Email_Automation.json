@@ -1,0 +1,207 @@
+{
+  "name": "OCR-Powered Email Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Image Upload",
+        "formDescription": "Please Provide your Image and Email for Notification",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Email",
+              "placeholder": "Enter Email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Document",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -320,
+        -20
+      ],
+      "id": "3ff5666f-eef9-4b31-87b6-eb77104f41d8",
+      "name": "On form submission",
+      "webhookId": "7634c6a1-9237-4762-9ab9-92b17a44501b"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.mistral.ai/v1/files",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer R4ayxtuQOEzBSjeE44DvBKdLrbGw7d3g"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "purpose",
+              "value": "ocr"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "Document"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -140,
+        -20
+      ],
+      "id": "c1e7462d-272b-40ef-ad31-7360505c54f9",
+      "name": "Mistral Upload File"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.mistral.ai/v1/files/{{ $json.id }}/url",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer R4ayxtuQOEzBSjeE44DvBKdLrbGw7d3g"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        40,
+        -20
+      ],
+      "id": "8345e04b-219a-436c-ad60-fa854e34db49",
+      "name": "Mistral Get Signed URL"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.mistral.ai/v1/ocr",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer R4ayxtuQOEzBSjeE44DvBKdLrbGw7d3g"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"document\": {\n    \"file_id\": \"{{ $('Mistral Upload File').item.json.id }}\" \n  },\n  \"model\": \"mistral-ocr-latest\"\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        -20
+      ],
+      "id": "c7b466d4-69b5-4c50-a5ee-d938f242e75b",
+      "name": "Mistral OCR"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('On form submission').item.json.Email }}",
+        "subject": "Document Content",
+        "emailType": "text",
+        "message": "={{ $json.pages[0].markdown }}\n\n{{ $json.pages[1].markdown }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        380,
+        -20
+      ],
+      "id": "698b90a4-e119-41a8-9f49-aab978a9bd00",
+      "name": "Gmail",
+      "webhookId": "5772bfd0-ffbf-47e0-921f-02215762f5a1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "aYiUHAOdqoPGtCeu",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Mistral Upload File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mistral Upload File": {
+      "main": [
+        [
+          {
+            "node": "Mistral Get Signed URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mistral Get Signed URL": {
+      "main": [
+        [
+          {
+            "node": "Mistral OCR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mistral OCR": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3c904bd4-9bab-46aa-847a-e2559db1ff8e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a14066fbe145cd8c99dbf4f5b2fd91cc22b89178d6d50adad487d793c6b5e040"
+  },
+  "id": "I1bQDWbD1iCPYvtZ",
+  "tags": []
+}

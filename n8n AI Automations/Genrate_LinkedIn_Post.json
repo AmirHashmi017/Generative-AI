@@ -1,0 +1,187 @@
+{
+  "name": "Genrate LinkedIn Post",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "LinkedIn Post",
+        "formDescription": "Generate Content and Post on LinkedIn",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "placeholder": "Enter your Email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Topic of Post",
+              "placeholder": "Enter Topic you want about post",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Additional Instructions",
+              "placeholder": "Provide the additional Instructions if you want"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4a15365b-76ec-46aa-b686-a0b1d7750a6f",
+      "name": "On form submission",
+      "webhookId": "93e4973a-c110-4ad6-89bc-9b9dbbb3e9d6"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Topic: {{ $json['Topic of Post'] }}\nAdditional Instructions{{ $json['Additional Instructions'] }} Don't give reponse like you are responsidng to user we have to post it directly on linkedIn so give direct post not Here is LinkedIn psot Line etc.",
+        "options": {
+          "systemMessage": "You are a specialized AI agent whose sole responsibility is to write high-quality,\nprofessional, and engaging LinkedIn posts.\n\nYour goal is to help the user create LinkedIn content that is:\n- Clear and concise\n- Insightful and value-driven\n- Aligned with LinkedIn’s professional tone\n- Optimized for readability and engagement\n\n────────────────────────────────────────\nINPUTS YOU MAY RECEIVE\n────────────────────────────────────────\n1. Topic (mandatory)\n2. User-provided instructions (optional)\n\nWhen calling the Tavily web search tool:\n- You MUST always populate the \"query\" parameter\n- Generate the query from the topic provided by the user\n- The query must never be empty\n- Use concise keyword-style queries (5–10 words)\n- If you cannot form a query, do not call the tool\n\nAnd give formattted response in response don't give here is LinkedIn post and other things etc. we have to post your contnet directly on linkedin give accordingly\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "bdd9d310-8929-4b99-8a2d-272f81ad1b0e",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        200,
+        200
+      ],
+      "id": "e6a67633-bd8b-4897-91af-d00bf9d47d91",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "e1PUcu51s5skMht4",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use this tool to Search the Web",
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"{{ $json['Topic of Post'] }}\",\n  \"topic\": \"general\",\n  \"search_depth\": \"advanced\",\n  \"max_results\": 1,\n  \"include_answer\": true\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        380,
+        220
+      ],
+      "id": "e7b1cee1-e0e1-4eb8-8b02-a999c278e664",
+      "name": "Tavily Web Search",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1afcyQ7MwVIB9vxQ",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('On form submission').item.json.Email }}",
+        "subject": "={{ $('On form submission').item.json['Topic of Post'] }} Post",
+        "message": "={{ $json.output }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        580,
+        0
+      ],
+      "id": "3e4fb762-c19c-4712-afee-6b1dd2eab490",
+      "name": "Gmail",
+      "webhookId": "cc9fd01c-2891-4e52-8996-12a1b6139480",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "aYiUHAOdqoPGtCeu",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily Web Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e3d18e41-48f1-4829-b590-3ff4ea8379e9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a14066fbe145cd8c99dbf4f5b2fd91cc22b89178d6d50adad487d793c6b5e040"
+  },
+  "id": "SxHHeuCQSrhTSQdV",
+  "tags": []
+}

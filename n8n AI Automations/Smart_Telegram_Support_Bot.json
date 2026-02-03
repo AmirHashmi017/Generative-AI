@@ -1,0 +1,718 @@
+{
+  "name": "Smart Telegram Support Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -460,
+        440
+      ],
+      "id": "7def4724-306d-45d6-912a-cad774504f6d",
+      "name": "Telegram Trigger",
+      "webhookId": "acb3241f-887b-45a0-b2a7-42b06796eb74",
+      "credentials": {
+        "telegramApi": {
+          "id": "R9mGZmc8vZRPEvhi",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bf362153-4e01-4508-b244-9cfbca790ffd",
+              "name": "user_id",
+              "value": "={{ $json.message.from.id }}",
+              "type": "number"
+            },
+            {
+              "id": "fb6e80da-d315-4a9d-b860-5eb9c9eca709",
+              "name": "user_name",
+              "value": "={{ $json.message.from.first_name }} {{ $json.message.from.last_name || \"\"}}",
+              "type": "string"
+            },
+            {
+              "id": "bb3a2b5e-282c-4121-9380-435c1eab4d36",
+              "name": "username",
+              "value": "={{ $json.message.from.first_name }} {{ $json.message.from.last_name || \"\"}}",
+              "type": "string"
+            },
+            {
+              "id": "0237e77a-f759-4fde-8014-cfce1cdfc494",
+              "name": "message_text",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            },
+            {
+              "id": "4d3286b0-25ef-47a4-836c-2bd08c313ad9",
+              "name": "chat_id",
+              "value": "={{ $json.message.chat.id }}",
+              "type": "number"
+            },
+            {
+              "id": "eeb26f9f-53cb-44c3-a786-d6852fed696a",
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -220,
+        440
+      ],
+      "id": "1a8bfc9a-d5c1-42bf-bd1d-564f93e779f4",
+      "name": "Set User Data"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Set User Data').item.json.chat_id }}",
+        "text": "=Hello {{ $('Set User Data').item.json.username }} \nWelcome to our Customer Support Bot. I can help you with:\n\n**Order Status** - Type your Order Number\n**FAQ** - Common Questions and Answers\n**Contact Support** - Connect with Human Agent\n**Billing** - Billing and Payment Questions\n**Shipping** - Delivery Information\n\nJust type what you need help with or use these commands:\n- /faq - View Frequently asked questions\n- /contact - Speak to Human Support\n- /status - Check Order Status\n\nHow can I help you today?",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        300,
+        0
+      ],
+      "id": "acf55a4a-4c12-47bc-919b-5c930ac7d603",
+      "name": "Send Welcome Message",
+      "webhookId": "3c7eeb1c-0d9a-4abf-b792-df10e66ba32d",
+      "credentials": {
+        "telegramApi": {
+          "id": "R9mGZmc8vZRPEvhi",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Set User Data').item.json.chat_id }}",
+        "text": "=Hello {{ $('Set User Data').item.json.username }},\n\nTo check the status of your order, please reply with your **Order Number**.  \n\nFor example, type something like:\n\n<b>123456789</b>\n\nOnce you send your order number, I will provide you with the latest status of your order, including shipment and delivery details.\n\nYou can also use these commands:\n\n- /faq - View Frequently Asked Questions  \n- /contact - Speak to a Human Support Agent  \n- /status - Check Order Status  \n\nHow can I assist you today?\n",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        300,
+        180
+      ],
+      "id": "be0d25a0-ca58-4a07-b441-6ce1705b1964",
+      "name": "Send Order Message",
+      "webhookId": "3c7eeb1c-0d9a-4abf-b792-df10e66ba32d",
+      "credentials": {
+        "telegramApi": {
+          "id": "R9mGZmc8vZRPEvhi",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Set User Data').item.json.chat_id }}",
+        "text": "=Hello {{ $('Set User Data').item.json.username }},\n\nHere are some **Frequently Asked Questions (FAQ)** that might help you:\n\n<b>1. How do I place an order?</b>\n- You can place an order directly through our website or app. Add items to your cart and proceed to checkout.\n\n<b>2. Can I track my order?</b>\n- Yes! Use the /status command and provide your order number to see the current status.\n\n<b>3. What payment methods do you accept?</b>\n- We accept credit/debit cards, PayPal, and other popular payment methods.\n\n<b>4. How can I contact support?</b>\n- Use the /contact command to connect with a human support agent.\n\n<b>5. What is your return policy?</b>\n- Items can be returned within 14 days of delivery if they are unused and in original packaging.\n\nYou can use these commands for quick access:\n\n- /faq - View this FAQ  \n- /contact - Speak to Human Support  \n- /status - Check Order Status  \n\nIf your question is not listed here, feel free to ask me directly!\n",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        300,
+        380
+      ],
+      "id": "37c1538c-41da-446a-abc5-7da441d48597",
+      "name": "Send FAQ Message",
+      "webhookId": "3c7eeb1c-0d9a-4abf-b792-df10e66ba32d",
+      "credentials": {
+        "telegramApi": {
+          "id": "R9mGZmc8vZRPEvhi",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Set User Data').item.json.chat_id }}",
+        "text": "=Hello {{ $('Set User Data').item.json.username }},\n\nYour request has been forwarded to our support team.  \nThey will contact you shortly. Thank you for your patience! 🙏\n",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        300,
+        560
+      ],
+      "id": "42458ee1-2fd1-4945-9480-090c29b3dbe7",
+      "name": "Send Human Support Message",
+      "webhookId": "3c7eeb1c-0d9a-4abf-b792-df10e66ba32d",
+      "credentials": {
+        "telegramApi": {
+          "id": "R9mGZmc8vZRPEvhi",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Set User Data').item.json.chat_id }}",
+        "text": "=Hello {{ $('Set User Data').item.json.username }},\n\nHere’s a summary of your billing information:\n\n<b>Billing Details:</b>\n- Account Name: [Your Account Name]\n- Billing Email: [user@example.com]\n- Last Payment: [Date / Amount]\n- Next Due Date: [Date]\n- Payment Method: [Credit Card / PayPal / etc.]\n\nIf you have any questions about your billing or need assistance, you can contact our support team using the /contact command.\n\nThank you for being with us!\n",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        300,
+        780
+      ],
+      "id": "2f6d210f-3c67-4de2-a0f8-bf04df065206",
+      "name": "Billing Details Message",
+      "webhookId": "3c7eeb1c-0d9a-4abf-b792-df10e66ba32d",
+      "credentials": {
+        "telegramApi": {
+          "id": "R9mGZmc8vZRPEvhi",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4b801569-3caa-4b08-b760-70dda5f0e768",
+              "leftValue": "={{ $json.message_text }}",
+              "rightValue": "/start",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "9c0d2b4b-6876-4127-b243-8153b1dd9d97",
+              "leftValue": "={{ $json.message_text }}",
+              "rightValue": "help",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "2ca5b185-8cf2-45c2-87c3-a09fc1806d87",
+              "leftValue": "={{ $json.message_text }}",
+              "rightValue": "hello",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        60
+      ],
+      "id": "181673c6-5155-4b74-b454-2a41d4c3486d",
+      "name": "Is Help Request"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4b801569-3caa-4b08-b760-70dda5f0e768",
+              "leftValue": "={{ $json.message_text }}",
+              "rightValue": "/status",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "9c0d2b4b-6876-4127-b243-8153b1dd9d97",
+              "leftValue": "={{ $json.message_text }}",
+              "rightValue": "track",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "2ca5b185-8cf2-45c2-87c3-a09fc1806d87",
+              "leftValue": "={{ $json.message_text }}",
+              "rightValue": "order",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        240
+      ],
+      "id": "3c809169-9863-41c7-95e9-e01e3717dc36",
+      "name": "Is Order Enquiry?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4b801569-3caa-4b08-b760-70dda5f0e768",
+              "leftValue": "={{ $json.message_text }}",
+              "rightValue": "/faq",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "9c0d2b4b-6876-4127-b243-8153b1dd9d97",
+              "leftValue": "={{ $json.message_text }}",
+              "rightValue": "question",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        420
+      ],
+      "id": "f1abb08d-288c-4210-8c84-be8963856ba6",
+      "name": "Is FAQ Request?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4b801569-3caa-4b08-b760-70dda5f0e768",
+              "leftValue": "={{ $json.message_text }}",
+              "rightValue": "/support",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "9c0d2b4b-6876-4127-b243-8153b1dd9d97",
+              "leftValue": "={{ $json.message_text }}",
+              "rightValue": "human",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "2ca5b185-8cf2-45c2-87c3-a09fc1806d87",
+              "leftValue": "={{ $json.message_text }}",
+              "rightValue": "/contact",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "28a187e7-8aab-4ff7-83cb-a8693daeaf2b",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        600
+      ],
+      "id": "0acfa507-7992-4899-9d9e-023983845d62",
+      "name": "Need Human Support?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4b801569-3caa-4b08-b760-70dda5f0e768",
+              "leftValue": "={{ $json.message_text }}",
+              "rightValue": "/billing",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "9c0d2b4b-6876-4127-b243-8153b1dd9d97",
+              "leftValue": "={{ $json.message_text }}",
+              "rightValue": "payment",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        780
+      ],
+      "id": "f8ebcfee-1692-4221-a226-986b555f7099",
+      "name": "Is billing Request?"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1yroQMtElgYTmMC4VtBIPcJ1K2M_P-TsaMZ6UNZy_jbM",
+          "mode": "list",
+          "cachedResultName": "Customer Support",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yroQMtElgYTmMC4VtBIPcJ1K2M_P-TsaMZ6UNZy_jbM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yroQMtElgYTmMC4VtBIPcJ1K2M_P-TsaMZ6UNZy_jbM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "user_id": "{{ $('Set User Data').item.json.user_id }}",
+            "username": "{{ $('Set User Data').item.json.user_name }}",
+            "message_text": "{{ $('Set User Data').item.json.message_text }}",
+            "chat_id": "{{ $('Set User Data').item.json.chat_id }}",
+            "Response": "{{ $json.result.text }}",
+            "TimeStamp": "{{ $('Set User Data').item.json.timestamp }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "username",
+              "displayName": "username",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message_text",
+              "displayName": "message_text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Response",
+              "displayName": "Response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "TimeStamp",
+              "displayName": "TimeStamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        700,
+        380
+      ],
+      "id": "0694afe0-ecab-42d1-a416-6a740af436de",
+      "name": "Log User Requests",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "4Wfa5M4RSf8Lfbu4",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set User Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set User Data": {
+      "main": [
+        [
+          {
+            "node": "Is Help Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Is Order Enquiry?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Is FAQ Request?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Need Human Support?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Is billing Request?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Help Request": {
+      "main": [
+        [
+          {
+            "node": "Send Welcome Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Order Enquiry?": {
+      "main": [
+        [
+          {
+            "node": "Send Order Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is FAQ Request?": {
+      "main": [
+        [
+          {
+            "node": "Send FAQ Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Need Human Support?": {
+      "main": [
+        [
+          {
+            "node": "Send Human Support Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is billing Request?": {
+      "main": [
+        [
+          {
+            "node": "Billing Details Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Welcome Message": {
+      "main": [
+        [
+          {
+            "node": "Log User Requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Order Message": {
+      "main": [
+        [
+          {
+            "node": "Log User Requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send FAQ Message": {
+      "main": [
+        [
+          {
+            "node": "Log User Requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Human Support Message": {
+      "main": [
+        [
+          {
+            "node": "Log User Requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Billing Details Message": {
+      "main": [
+        [
+          {
+            "node": "Log User Requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "11b540e5-5503-407b-99cc-7439639be451",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a14066fbe145cd8c99dbf4f5b2fd91cc22b89178d6d50adad487d793c6b5e040"
+  },
+  "id": "amnb9XG7rhhKhc7a",
+  "tags": []
+}

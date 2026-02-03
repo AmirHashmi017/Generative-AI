@@ -1,0 +1,465 @@
+{
+  "name": "Automated Healthcare Data Scraper",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        -20
+      ],
+      "id": "0946fbe4-0c57-45de-a6ca-27776c4e9d33",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "=https://maps.googleapis.com/maps/api/place/textsearch/json?query={{ $json.query }}&key=AIzaSyDrC-HX3cZhFLdZkLVTlnt197-02bI4xM4",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -180,
+        -20
+      ],
+      "id": "ab6dc730-9dfa-49fe-a1e7-792696b6fe0d",
+      "name": "Get Doctors From Google"
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = $input.first().json.results || [];\nreturn results.map(r => ({ json: { place_id: r.place_id } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        -20
+      ],
+      "id": "14c3adad-5e18-4219-aa2b-1e3ff39dfd3a",
+      "name": "Get Place ID's"
+    },
+    {
+      "parameters": {
+        "url": "=https://maps.googleapis.com/maps/api/place/details/json?place_id={{ $json.place_id }}&fields=name,website,formatted_address&key=AIzaSyDrC-HX3cZhFLdZkLVTlnt197-02bI4xM4",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        -20
+      ],
+      "id": "111b3b73-cc80-4fab-bea2-84055db06159",
+      "name": "Get Website URL and things"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return { json: {\n  place_id: $json.place_id,\n  website: $json.result?.website || null,\n  name: $json.result?.name || null\n} };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        540,
+        -20
+      ],
+      "id": "d89198d3-4c7e-4dc0-b778-18711c320fe8",
+      "name": "Get Website"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8801b13e-1d77-4807-ba59-82798633cb1b",
+              "leftValue": "={{ $json.website }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        780,
+        -20
+      ],
+      "id": "ff1fdccd-d103-47cd-b593-e08329d8384a",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "compare": "selectedFields",
+        "fieldsToCompare": "website",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        -40
+      ],
+      "id": "316dee95-9324-4954-bf53-60967e1f7195",
+      "name": "Remove Duplicates"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        0,
+        200
+      ],
+      "id": "0db467ce-4713-4b76-81fe-0d5a5ce9725d",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json.data\n \nconst emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.(?!png|jpg|gif|jpeg)[a-zA-Z]{2,}/g\n \nemails = data.match(emailRegex)\n \nconsole.log(emails)\n \nreturn {json: {emails: emails}}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        320
+      ],
+      "id": "22a46b0d-2f72-47ca-ae48-9a628de667f6",
+      "name": "Get Emails"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -440,
+        280
+      ],
+      "id": "4822a8a3-453d-4113-9685-9784e6efd3d8",
+      "name": "Loop Over Items",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "url": "= {{$json.website }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -200,
+        280
+      ],
+      "id": "f884bdf3-1f5f-47cd-9425-f6a7acab58b1",
+      "name": "Get Website Content",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const all = [];\nfor (const item of $input.all()) {\n  const e = item.json.emails;\n  if (Array.isArray(e)) all.push(...e);\n  else if (e) all.push(e);\n}\nconst unique = [...new Set(all.filter(Boolean))];\nreturn [{ json: { emails: unique } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        380,
+        200
+      ],
+      "id": "f6d2f090-f7ed-4186-abec-3ddaa27eaf71",
+      "name": "Flatten Emails"
+    },
+    {
+      "parameters": {
+        "jsCode": "const out = [];\nfor (const item of $input.all()) {\n  const arr = item.json.emails;\n  if (Array.isArray(arr)) {\n    for (const em of arr) out.push({ json: { email: em } });\n  } else if (arr) {\n    out.push({ json: { email: arr } });\n  }\n}\nreturn out;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        600,
+        200
+      ],
+      "id": "84450e9c-5514-4e76-acc3-d4adef27683e",
+      "name": "Format Emails"
+    },
+    {
+      "parameters": {
+        "compare": "selectedFields",
+        "fieldsToCompare": "email",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        800,
+        220
+      ],
+      "id": "0ada7d5b-e6e1-481d-a6b7-9d3b856a8c3e",
+      "name": "Remove Duplicates1"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1-dVFIRRGURk-OIMf1GdMn9e2IKXu2sPIKBl5Z_UGu0M",
+          "mode": "list",
+          "cachedResultName": "Medical Billing Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-dVFIRRGURk-OIMf1GdMn9e2IKXu2sPIKBl5Z_UGu0M/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-dVFIRRGURk-OIMf1GdMn9e2IKXu2sPIKBl5Z_UGu0M/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $json.email }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "schema": [
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1040,
+        260
+      ],
+      "id": "e5bf1410-ba1c-4bda-b134-a0f6e6e764c0",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "4Wfa5M4RSf8Lfbu4",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "When clicking ‘Execute workflow’": [
+      {
+        "json": {
+          "query": "doctor+USA"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get Doctors From Google",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Doctors From Google": {
+      "main": [
+        [
+          {
+            "node": "Get Place ID's",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Place ID's": {
+      "main": [
+        [
+          {
+            "node": "Get Website URL and things",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Website URL and things": {
+      "main": [
+        [
+          {
+            "node": "Get Website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Website": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [
+          {
+            "node": "Flatten Emails",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Emails": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Website Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Website Content": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten Emails": {
+      "main": [
+        [
+          {
+            "node": "Format Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Emails": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates1": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3bf14036-3242-4404-8c10-2f8bef22f9ee",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a14066fbe145cd8c99dbf4f5b2fd91cc22b89178d6d50adad487d793c6b5e040"
+  },
+  "id": "Vw4ZOYV7f50NMc0h",
+  "tags": []
+}
